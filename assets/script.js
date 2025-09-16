@@ -223,13 +223,17 @@ async function sendWebhook() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const result = await response.json();
+        // lê a resposta com segurança (pode vir JSON ou texto)
+let msg = '';
+try {
+  const data = await response.clone().json();
+  msg = data?.message || '';
+} catch {
+  msg = await response.text(); // se não for JSON, usa texto
+}
 
-        if (result.success) {
-            showToast('Sucesso', 'Webhook enviado com sucesso!', 'success');
-        } else {
-            showToast('Erro', result.message || 'Erro ao enviar webhook', 'error');
-        }
+// se chegou aqui, response.ok já foi verificado antes
+showToast('Sucesso', msg || 'Mensagem enviada com sucesso!', 'success');
     } catch (error) {
         console.error('Erro ao enviar webhook:', error);
         showToast('Erro', 'Erro de conexão ao enviar webhook', 'error');
@@ -242,27 +246,24 @@ async function sendWebhook() {
 
 // Funções de UI
 function showToast(title, message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icon = type === 'Mensagens enviada com sucesso' ? '✅' : type === 'error' ? '✅' : '⚠️';
-    
-    toast.innerHTML = `
-        <div class="toast-icon">${icon}</div>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    elements.toastContainer.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 5000);
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type] || 'ℹ️'}</div>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      <div class="toast-message">${message}</div>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+
+  elements.toastContainer.appendChild(toast);
+
+  // auto-fecha (sucesso mais rápido; erro/aviso um pouco mais)
+  const ttl = type === 'success' ? 3000 : 5000;
+  setTimeout(() => toast.remove(), ttl);
 }
 
 function formatFileSize(bytes) {
