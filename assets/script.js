@@ -105,7 +105,6 @@ function handleFile(file) {
     elements.fileSize.textContent = formatFileSize(file.size);
     elements.fileInfo.style.display = 'flex';
     elements.uploadArea.style.display = 'none';
-    // Botão sempre habilitado para abrir a planilha
     elements.uploadBtn.disabled = false;
 }
 
@@ -114,12 +113,10 @@ function removeFile() {
     elements.fileInput.value = '';
     elements.fileInfo.style.display = 'none';
     elements.uploadArea.style.display = 'block';
-    // Botão sempre habilitado para abrir a planilha
     elements.uploadBtn.disabled = false;
 }
 
 function uploadFile() {
-    // Abre a planilha do Google Sheets em uma nova aba
     window.open(CONFIG.sheetUrl, '_blank');
     showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
 }
@@ -214,7 +211,7 @@ async function sendWebhook() {
     };
 
     try {
-        const response = await fetch('/api/send-webhook', {
+        const response = await fetch(process.env.NEXT_PUBLIC_WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -244,7 +241,6 @@ async function sendWebhook() {
 }
 
 // Funções de UI
-
 function showToast(title, message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -262,7 +258,6 @@ function showToast(title, message, type = 'success') {
     
     elements.toastContainer.appendChild(toast);
     
-    // Auto remove após 5 segundos
     setTimeout(() => {
         if (toast.parentElement) {
             toast.remove();
@@ -283,8 +278,6 @@ elements.textEditor.addEventListener('keyup', updateToolbarState);
 elements.textEditor.addEventListener('mouseup', updateToolbarState);
 elements.textEditor.addEventListener('focus', updateToolbarState);
 
-// Atualizar estado da toolbar quando o editor ganha foco
 elements.textEditor.addEventListener('focus', () => {
     setTimeout(updateToolbarState, 10);
 });
-
