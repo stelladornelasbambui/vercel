@@ -211,7 +211,7 @@ async function sendWebhook() {
     };
 
     try {
-        const response = await fetch(process.env.NEXT_PUBLIC_WEBHOOK_URL, {
+        const response = await fetch("https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
