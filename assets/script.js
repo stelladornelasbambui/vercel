@@ -1,176 +1,160 @@
-// ===== Util =====
-const $ = (id) => document.getElementById(id);
-const on = (el, ev, fn) => el && el.addEventListener(ev, fn);
+// ================== CONFIG ==================
+const CONFIG = {
+  maxChars: 2000,
+  sheetId: "1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s",
+  sheetUrl: "https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899",
 
-function showToast(title, message, type = "success") {
-  const icons = { success: "✅", error: "❌", warning: "⚠️", info: "ℹ️" };
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `
-    <div class="toast-icon">${icons[type] || "ℹ️"}</div>
-    <div class="toast-content">
-      <div class="toast-title">${title}</div>
-      <div class="toast-message">${message}</div>
-    </div>
-    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-  `;
-  $("toastContainer").appendChild(toast);
-  setTimeout(() => toast.remove(), type === "success" ? 3000 : 5000);
-}
+  // 🔑 Z-API
+  zapiBase: "https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CEC0C1",
+  zapiToken: "98D3BDE53E512EA3B08B8D07",
 
-function formatFileSize(bytes) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
+  // 🔑 Postimages (sem API oficial, usamos endpoint anônimo Imgbb ou Cloudinary no real)
+  uploadUrl: "https://api.imgbb.com/1/upload?key=babc90a7ab9bddc78a89ebe1108ff464" // 🔴 troque pela sua key do imgbb
+};
 
-// ===== Estado =====
+// ================== ELEMENTOS ==================
+const elements = {
+  textEditor: document.getElementById("textEditor"),
+  charCount: document.getElementById("charCount"),
+  clearBtn: document.getElementById("clearBtn"),
+  sendBtn: document.getElementById("sendBtn"),
+  toastContainer: document.getElementById("toastContainer"),
+
+  // Imagem
+  imageInput: document.getElementById("imageInput"),
+  imageUploadBtn: document.getElementById("imageUploadBtn"),
+  imagePreview: document.getElementById("imagePreview"),
+  previewImg: document.getElementById("previewImg"),
+  removeImageBtn: document.getElementById("removeImageBtn"),
+  publicUrl: document.getElementById("publicUrl")
+};
+
+// ================== ESTADO ==================
 let state = {
-  selectedFile: null,
   selectedImage: null,
+  publicImageUrl: null,
   isSending: false
 };
 
-// ===== Inicialização =====
+// ================== EVENTOS ==================
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[INIT] DOM pronto");
+  elements.textEditor.addEventListener("input", updateCharCount);
+  elements.clearBtn.addEventListener("click", clearEditor);
+  elements.sendBtn.addEventListener("click", sendWebhook);
 
-  // Planilha
-  on($("uploadArea"), "click", () => $("fileInput").click());
-  on($("fileInput"), "change", handleFileSelect);
-  on($("uploadBtn"), "click", uploadFile);
-  on($("removeFile"), "click", removeFile);
+  elements.imageUploadBtn.addEventListener("click", () => elements.imageInput.click());
+  elements.imageInput.addEventListener("change", handleImageSelect);
+  elements.removeImageBtn.addEventListener("click", removeImage);
 
-  // Editor
-  on($("textEditor"), "input", updateCharCount);
-  on($("clearBtn"), "click", clearEditor);
-  on($("sendBtn"), "click", sendWebhook);
-
-  // Imagem
-  // 1) Fallback sem JS já funciona via <label for="imageInput">
-  // 2) Com JS, também forçamos o click programático (não faz mal ter os dois)
-  on($("imageUploadBtn"), "click", (e) => {
-    console.log("[IMG] Botão clicado");
-    // se por algum CSS o label não abrir, garantimos programaticamente:
-    const input = $("imageInput");
-    if (input) input.click();
-  });
-
-  on($("imageInput"), "change", handleImageSelect);
-  on($("removeImageBtn"), "click", removeImage);
-
-  // Habilita o botão se tiver texto
   updateCharCount();
 });
 
-// ===== Planilha =====
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (!file.name.toLowerCase().endsWith(".xlsx") && !file.name.toLowerCase().endsWith(".xls")) {
-    showToast("Erro", "Apenas arquivos .xlsx ou .xls são permitidos", "error");
-    return;
-  }
-  state.selectedFile = file;
-  $("fileName").textContent = file.name;
-  $("fileSize").textContent = formatFileSize(file.size);
-  $("fileInfo").style.display = "flex";
-  $("uploadArea").style.display = "none";
-}
-
-function removeFile() {
-  state.selectedFile = null;
-  $("fileInput").value = "";
-  $("fileInfo").style.display = "none";
-  $("uploadArea").style.display = "block";
-}
-
-function uploadFile() {
-  const sheetUrl = "https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899";
-  window.open(sheetUrl, "_blank");
-  showToast("Sucesso", "Abrindo planilha do Google Sheets...", "success");
-}
-
-// ===== Editor =====
+// ================== FUNÇÕES ==================
 function updateCharCount() {
-  const count = ($("textEditor").textContent || "").length;
-  $("charCount").textContent = count;
-  $("sendBtn").disabled = count === 0 || count > 2000;
+  const content = elements.textEditor.textContent || "";
+  const count = content.length;
+  elements.charCount.textContent = count;
+  elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
 }
 
 function clearEditor() {
-  $("textEditor").innerHTML = "";
+  elements.textEditor.innerHTML = "";
   updateCharCount();
-  if (state.selectedImage) removeImage();
-  showToast("Sucesso", "Editor limpo com sucesso", "success");
+  showToast("Editor limpo", "success");
 }
 
-// ===== Imagem =====
 function handleImageSelect(e) {
   const file = e.target.files[0];
-  if (!file) return;
-
-  if (!file.type.startsWith("image/")) {
-    showToast("Erro", "Apenas imagens são permitidas", "error");
-    return;
+  if (file) {
+    state.selectedImage = file;
+    elements.previewImg.src = URL.createObjectURL(file);
+    elements.imagePreview.style.display = "block";
+    showToast("Imagem selecionada", "success");
   }
-  if (file.size > 5 * 1024 * 1024) {
-    showToast("Erro", "Imagem deve ter no máximo 5MB", "error");
-    return;
-  }
-
-  state.selectedImage = file;
-
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    $("previewImg").src = ev.target.result;
-    $("imageName").textContent = file.name;
-    $("imageSize").textContent = formatFileSize(file.size);
-    $("imagePreview").style.display = "block";
-  };
-  reader.onerror = (err) => console.error("[IMG] FileReader error:", err);
-  reader.readAsDataURL(file);
-
-  console.log("[IMG] Imagem selecionada:", file.name, file.type, file.size);
-  showToast("Sucesso", "Imagem selecionada!", "success");
 }
 
 function removeImage() {
   state.selectedImage = null;
-  $("imageInput").value = "";
-  $("imagePreview").style.display = "none";
+  state.publicImageUrl = null;
+  elements.imageInput.value = "";
+  elements.imagePreview.style.display = "none";
+  elements.publicUrl.textContent = "";
 }
 
-// ===== Envio (exemplo mínimo só para destravar botão) =====
-// Substitua este trecho pelo seu fluxo de upload->URL pública->Z-API
+// Upload para Postimages / Imgbb
+async function uploadToPostimages(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(CONFIG.uploadUrl, { method: "POST", body: formData });
+  const data = await res.json();
+
+  if (!data.success) throw new Error("Erro ao hospedar imagem");
+  return data.data.url; // URL pública
+}
+
+// Enviar Webhook -> Z-API
 async function sendWebhook() {
   if (state.isSending) return;
 
-  const message = ($("textEditor").textContent || "").trim();
+  const message = elements.textEditor.textContent.trim();
   if (!message) {
-    showToast("Aviso", "Digite uma mensagem antes de enviar", "warning");
+    showToast("Digite uma mensagem", "warning");
     return;
   }
 
   state.isSending = true;
-  $("sendBtn").disabled = true;
+  elements.sendBtn.classList.add("loading");
+  elements.sendBtn.disabled = true;
 
   try {
-    // Aqui você pode acionar seu fluxo atual (upload para Postimages/Cloudinary etc)
-    console.log("[SEND] Enviando com mensagem:", message);
+    let imageUrl = null;
     if (state.selectedImage) {
-      console.log("[SEND] Tem imagem selecionada:", state.selectedImage.name);
+      imageUrl = await uploadToPostimages(state.selectedImage);
+      state.publicImageUrl = imageUrl;
+      elements.publicUrl.textContent = imageUrl;
     }
 
-    // Simulando sucesso
-    showToast("Sucesso", "Mensagem (simulada) enviada!", "success");
+    const payload = {
+      phone: "553799999999", // 🔴 substitua pelo campo real
+      message: message
+    };
+
+    let endpoint = "/send-text";
+    if (imageUrl) {
+      payload.image = imageUrl;
+      payload.caption = message;
+      endpoint = "/send-image";
+    }
+
+    const response = await fetch(`${CONFIG.zapiBase}/token/${CONFIG.zapiToken}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error("Erro HTTP: " + response.status);
+
+    const result = await response.json();
+    showToast("Mensagem enviada!", "success");
+    console.log("✅ Resultado Z-API:", result);
+
   } catch (err) {
-    console.error("[SEND] Erro:", err);
-    showToast("Erro", "Falha ao enviar", "error");
+    console.error("❌ Erro:", err);
+    showToast("Erro: " + err.message, "error");
   } finally {
     state.isSending = false;
-    $("sendBtn").disabled = false;
+    elements.sendBtn.classList.remove("loading");
+    elements.sendBtn.disabled = false;
   }
+}
+
+// Toast
+function showToast(message, type = "info") {
+  const icons = { success: "✅", error: "❌", warning: "⚠️", info: "ℹ️" };
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `${icons[type]} ${message}`;
+  elements.toastContainer.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
