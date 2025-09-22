@@ -113,20 +113,25 @@ async function sendWebhook() {
       elements.publicUrl.textContent = imageUrl;
     }
 
-    const payload = {
+    let endpoint = "send-text";
+    let payload = {
       phone: "553799999999", // altere para o número real
       message: message
     };
 
-    let endpoint = "/send-text";
     if (imageUrl) {
-      payload.image = imageUrl;
-      payload.caption = message;
-      endpoint = "/send-image";
+      endpoint = "send-image"; // ✅ corrigido
+      payload = {
+        phone: "553799999999",
+        image: imageUrl,   // URL pública do Imgbb
+        caption: message   // legenda
+      };
     }
 
-const response = await fetch(`${CONFIG.zapiBase}/token/${CONFIG.zapiToken}/${endpoint}`, {
+    const url = `${CONFIG.zapiBase}/token/${CONFIG.zapiToken}/${endpoint}`;
+    console.log("📤 Enviando para:", url, "Payload:", payload);
 
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
