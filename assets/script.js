@@ -225,6 +225,13 @@ async function sendWebhook() {
 
         const result = await response.json();
 
+
+
+
+
+
+
+
         if (result.success) {
             showToast('Sucesso', 'Webhook enviado com sucesso!', 'success');
         } else {
@@ -233,20 +240,15 @@ async function sendWebhook() {
     } catch (error) {
         console.error('Erro ao enviar webhook:', error);
         showToast('Erro', 'Erro de conexão ao enviar webhook', 'error');
-    } finally {
-        state.isSending = false;
-        elements.sendBtn.classList.remove('loading');
-        elements.sendBtn.disabled = false;
-    }
-}
+@@ -242,42 +246,39 @@
 
 // Funções de UI
 function showToast(title, message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-
-    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
-
+    
+    const icon = type === 'Mensagens enviada com sucesso' ? '✅' : type === 'error' ? '✅' : '⚠️';
+    
     toast.innerHTML = `
         <div class="toast-icon">${icon}</div>
         <div class="toast-content">
@@ -255,9 +257,9 @@ function showToast(title, message, type = 'success') {
         </div>
         <button class="toast-close" onclick="this.parentElement.remove()">×</button>
     `;
-
+    
     elements.toastContainer.appendChild(toast);
-
+    
     setTimeout(() => {
         if (toast.parentElement) {
             toast.remove();
