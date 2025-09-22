@@ -14,7 +14,7 @@ async function sendWebhook() {
   try {
     let imageUrl = null;
 
-    // Se tiver imagem, primeiro sobe para Imgbb
+    // Se tiver imagem, hospeda no Imgbb
     if (state.selectedImage) {
       imageUrl = await uploadToPostimages(state.selectedImage);
       state.publicImageUrl = imageUrl;
@@ -27,29 +27,32 @@ async function sendWebhook() {
     if (imageUrl) {
       endpoint = "/send-image";
       payload = {
-        phone: "553799999999",
-        image: imageUrl,
-        caption: message
+        phone: "553799999999",   // Número destino
+        image: imageUrl,        // URL pública gerada
+        caption: message        // Legenda
       };
     } else {
       endpoint = "/send-text";
       payload = {
         phone: "553799999999",
-        text: message   // 👈 aqui muda para text
+        text: message           // 👈 precisa ser text
       };
     }
 
-    const response = await fetch(`${CONFIG.zapiBase}/token/${CONFIG.zapiToken}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const response = await fetch(
+      `${CONFIG.zapiBase}/token/${CONFIG.zapiToken}${endpoint}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
 
     if (!response.ok) throw new Error("Erro HTTP: " + response.status);
 
     const result = await response.json();
-    showToast("Mensagem enviada com sucesso!", "success");
     console.log("✅ Resultado Z-API:", result);
+    showToast("Mensagem enviada com sucesso!", "success");
 
   } catch (err) {
     console.error("❌ Erro:", err);
