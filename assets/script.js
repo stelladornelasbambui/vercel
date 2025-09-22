@@ -175,24 +175,37 @@ async function sendWebhook() {
     elements.sendBtn.classList.add('loading');
     elements.sendBtn.disabled = true;
 
-    // 🔹 Monta payload no formato da Z-API
-    let payload = {
-        phone: "5533999999999" // depois você vai dinamizar pelos contatos da planilha
-    };
+    // 🔹 Configs da Z-API
+    const instanceUrl = "https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07";
+    const clientToken = "Fba907eb583fd4fcda5c9b30c52a6edadS";
+
+    // 🔹 Monta payload
+    let payload;
+    let url;
 
     if (state.imageUrl) {
-        payload.image = state.imageUrl; // URL pública do ImgBB
-        payload.caption = message || ""; // legenda opcional
+        // Envio de imagem
+        url = `${instanceUrl}/send-image`;
+        payload = {
+            phone: "5533999999999", // substituir pelo número destino
+            image: state.imageUrl,
+            caption: message || ""
+        };
     } else {
-        payload.message = message; // texto puro
+        // Envio de texto
+        url = `${instanceUrl}/send-text`;
+        payload = {
+            phone: "5533999999999",
+            message: message
+        };
     }
 
     try {
-        const response = await fetch("https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07/send-messages", {
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'client-token': 'Fba907eb583fd4fcda5c9b30c52a6edadS' // 🔹 seu client-token
+                'client-token': clientToken
             },
             body: JSON.stringify(payload)
         });
