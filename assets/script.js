@@ -19,6 +19,8 @@ async function loadConfig() {
 }
 
 // ================== ELEMENTOS ==================
+
+// ================== ELEMENTOS ==================
 const elements = {
     uploadArea: document.getElementById('uploadArea'),
     fileInput: document.getElementById('fileInput'),
