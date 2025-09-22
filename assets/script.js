@@ -34,13 +34,18 @@ const elements = {
     charCount: document.getElementById('charCount'),
     clearBtn: document.getElementById('clearBtn'),
     sendBtn: document.getElementById('sendBtn'),
-    toastContainer: document.getElementById('toastContainer')
+    toastContainer: document.getElementById('toastContainer'),
+    // novos elementos imagem
+    imageInput: document.getElementById('imageInput'),
+    imagePreview: document.getElementById('imagePreview'),
+    previewImg: document.getElementById('previewImg')
 };
 
 // Estado
 let state = {
     selectedFile: null,
-    isSending: false
+    isSending: false,
+    imageUrl: null
 };
 
 // Inicialização
@@ -63,9 +68,14 @@ function initializeEventListeners() {
     elements.textEditor.addEventListener('paste', handlePaste);
     elements.clearBtn.addEventListener('click', clearEditor);
     elements.sendBtn.addEventListener('click', sendWebhook);
+
+    // Upload imagem
+    if (elements.imageInput) {
+        elements.imageInput.addEventListener('change', handleImageUpload);
+    }
 }
 
-// Funções Upload (mantidas só para planilha)
+// Funções Upload (planilha)
 function handleFileSelect(e) {
     const file = e.target.files[0];
     if (file) {
@@ -98,6 +108,43 @@ function removeFile() {
 function uploadFile() {
     window.open(CONFIG.sheetUrl, '_blank');
     showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
+}
+
+// Funções Upload (imagem Postimages)
+async function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Pré-visualização local
+    const reader = new FileReader();
+    reader.onload = () => {
+        elements.previewImg.src = reader.result;
+        elements.imagePreview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+
+    // Envio para Postimages
+    const formData = new FormData();
+    formData.append("smfile", file);
+
+    try {
+        const response = await fetch("https://api.postimages.org/1/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.url) {
+            state.imageUrl = result.url;
+            showToast('Sucesso', 'Imagem enviada para Postimages!', 'success');
+        } else {
+            throw new Error("Falha no upload");
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Erro', 'Erro ao enviar imagem para Postimages', 'error');
+    }
 }
 
 // Funções Editor
@@ -153,6 +200,11 @@ async function sendWebhook() {
             charCount: message.length
         }
     };
+
+    // Se tiver imagem, adiciona ao payload
+    if (state.imageUrl) {
+        payload.image = state.imageUrl;
+    }
 
     try {
         const response = await fetch("https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12", {
