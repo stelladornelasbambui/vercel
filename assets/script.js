@@ -199,11 +199,14 @@ const response = await fetch("https://api.z-api.io/instances/3DF2EE19A630504B2B1
 
         const result = await response.json();
 
-        if (result.sent) {
-            showToast('Sucesso', 'Mensagem enviada com sucesso via Z-API!', 'success');
-        } else {
-            showToast('Erro', result.error || 'Erro ao enviar via Z-API', 'error');
-        }
+        console.log("Resposta da Z-API:", result);
+
+if (response.ok && !result.error) {
+    showToast('Sucesso', 'Mensagem enviada com sucesso via Z-API!', 'success');
+} else {
+    showToast('Erro', result.error || JSON.stringify(result), 'error');
+}
+
     } catch (error) {
         console.error('Erro ao enviar webhook:', error);
         showToast('Erro', 'Erro de conexão ao enviar via Z-API', 'error');
