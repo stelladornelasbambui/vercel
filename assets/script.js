@@ -177,7 +177,7 @@ async function sendWebhook() {
 
     // 🔹 Monta payload no formato da Z-API
     let payload = {
-        phone: "5533999999999" // depois você vai dinasmizar pelos contatos da planilha
+        phone: "5533999999999" // depois você vai dinamizar pelos contatos da planilha
     };
 
     if (state.imageUrl) {
@@ -188,25 +188,20 @@ async function sendWebhook() {
     }
 
     try {
-const response = await fetch("https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07/send-messages", {
-
+        const response = await fetch("https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07/send-messages", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
         const result = await response.json();
-
         console.log("Resposta da Z-API:", result);
 
-if (response.ok && !result.error) {
-    showToast('Sucesso', 'Mensagem enviada com sucesso via Z-API!', 'success');
-} else {
-    showToast('Erro', result.error || JSON.stringify(result), 'error');
-}
-
+        if (response.ok && result.messageId) {
+            showToast('Sucesso', 'Mensagem enviada com sucesso via Z-API!', 'success');
+        } else {
+            showToast('Erro', result.error || JSON.stringify(result), 'error');
+        }
     } catch (error) {
         console.error('Erro ao enviar webhook:', error);
         showToast('Erro', 'Erro de conexão ao enviar via Z-API', 'error');
