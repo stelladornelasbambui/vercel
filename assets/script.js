@@ -169,7 +169,7 @@ async function sendWebhook() {
 
     const message = elements.textEditor.textContent.trim();
     if (!message && !state.imageUrl) {
-        showToast('Aviso', 'Digite uma mensagem ou envie uma imagem antes de enviar', 'warning');
+        showToast('Aviso', 'Digite uma mensagem ou envie uma imagem antes de enviard', 'warning');
         return;
     }
 
