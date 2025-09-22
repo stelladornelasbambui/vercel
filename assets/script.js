@@ -66,7 +66,7 @@
 
           <!-- Ações -->
           <div class="editor-actions">
-            <button class="btn btn-secondary" id="clearBtn">🗑️ Limpar</button>
+            <button class="btn btn-secondary" id="clearBtn">🗑️ Limpar!!</button>
             <button class="btn btn-success" id="sendBtn">
               <span class="btn-text">📤 Enviar Webhook</span>
             </button>
