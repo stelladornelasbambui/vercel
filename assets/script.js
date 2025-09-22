@@ -125,7 +125,7 @@ async function sendWebhook() {
       endpoint = "/send-image";
     }
 
-    const response = await fetch(`${CONFIG.zapiBase}/token/${CONFIG.zapiToken}${endpoint}`, {
+    const response = await fetch(`${CONFIG.zapiBase}/token/${CONFIG.zapiToken}/${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
