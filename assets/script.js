@@ -1,250 +1,162 @@
-// Configurações globais - carregadas do config.json
+// Configurações globais
 let CONFIG = {
-    maxChars: 2000,
-    sheetId: '1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899'
-};
+  maxChars: 2000,
+  sheetId: '1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s',
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899',
 
-// Carregar configurações do arquivo config.json
-async function loadConfig() {
-    try {
-        const response = await fetch('config/config.json');
-        const configData = await response.json();
-        
-        // Atualizar configurações
-        CONFIG.maxChars = configData.editor.maxChars;
-        CONFIG.sheetId = configData.googleSheets.sheetId;
-        CONFIG.sheetUrl = configData.googleSheets.sheetUrl;
-        
-        console.log('Configurações carregadas:', CONFIG);
-    } catch (error) {
-        console.warn('Erro ao carregar configurações, usando padrões:', error);
-    }
-}
+  // ⚠️ Coloque aqui seus dados da instância Z-API
+  zapiInstance: "3DF2EE19A630504B2B138E66062CE0C1", 
+  zapiToken: "9BD3BD5E35E12EA3B0B88D07"
+};
 
 // Elementos DOM
 const elements = {
-    uploadArea: document.getElementById('uploadArea'),
-    fileInput: document.getElementById('fileInput'),
-    fileInfo: document.getElementById('fileInfo'),
-    fileName: document.getElementById('fileName'),
-    fileSize: document.getElementById('fileSize'),
-    removeFile: document.getElementById('removeFile'),
-    uploadBtn: document.getElementById('uploadBtn'),
-    textEditor: document.getElementById('textEditor'),
-    charCount: document.getElementById('charCount'),
-    clearBtn: document.getElementById('clearBtn'),
-    sendBtn: document.getElementById('sendBtn'),
-    toastContainer: document.getElementById('toastContainer'),
-    // Toolbar
-    boldBtn: document.getElementById('boldBtn'),
-    italicBtn: document.getElementById('italicBtn'),
-    underlineBtn: document.getElementById('underlineBtn'),
-    emojiBtn: document.getElementById('emojiBtn'),
-    emojiGrid: document.getElementById('emojiGrid')
+  textEditor: document.getElementById('textEditor'),
+  charCount: document.getElementById('charCount'),
+  sendBtn: document.getElementById('sendBtn'),
+  toastContainer: document.getElementById('toastContainer'),
+
+  // Upload de imagem
+  imageInput: document.getElementById('imageInput'),
+  imageUploadBtn: document.getElementById('imageUploadBtn'),
+  imagePreview: document.getElementById('imagePreview'),
+  previewImg: document.getElementById('previewImg'),
+  removeImageBtn: document.getElementById('removeImageBtn'),
+  imageName: document.getElementById('imageName'),
+  imageSize: document.getElementById('imageSize')
 };
 
 // Estado da aplicação
 let state = {
-    selectedFile: null,
-    isUploading: false,
-    isSending: false
+  selectedImage: null,
+  isSending: false
 };
 
 // Inicialização
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadConfig();
-    initializeEventListeners();
-    updateCharCount();
+document.addEventListener('DOMContentLoaded', () => {
+  initializeEventListeners();
+  updateCharCount();
 });
 
 // Event Listeners
 function initializeEventListeners() {
-    // Upload de arquivo
-    elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
-    elements.fileInput.addEventListener('change', handleFileSelect);
-    elements.removeFile.addEventListener('click', removeFile);
-    elements.uploadBtn.addEventListener('click', uploadFile);
+  // Upload de imagem
+  elements.imageUploadBtn.addEventListener('click', () => elements.imageInput.click());
+  elements.imageInput.addEventListener('change', handleImageSelect);
+  elements.removeImageBtn.addEventListener('click', removeImage);
 
-    // Editor de texto
-    elements.textEditor.addEventListener('input', updateCharCount);
-    elements.textEditor.addEventListener('paste', handlePaste);
-    elements.clearBtn.addEventListener('click', clearEditor);
-    elements.sendBtn.addEventListener('click', sendWebhook);
+  // Editor
+  elements.textEditor.addEventListener('input', updateCharCount);
 
-    // Toolbar
-    elements.boldBtn.addEventListener('click', () => toggleFormat('bold'));
-    elements.italicBtn.addEventListener('click', () => toggleFormat('italic'));
-    elements.underlineBtn.addEventListener('click', () => toggleFormat('underline'));
-
-    // Emojis
-    elements.emojiGrid.addEventListener('click', handleEmojiClick);
-    document.addEventListener('click', (e) => {
-        if (!elements.emojiBtn.contains(e.target) && !elements.emojiGrid.contains(e.target)) {
-            elements.emojiGrid.style.display = 'none';
-        }
-    });
+  // Botão enviar
+  elements.sendBtn.addEventListener('click', sendWebhook);
 }
 
-// Funções de Upload
-function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
-}
-
-function handleFile(file) {
-    if (!file.name.toLowerCase().endsWith('.xlsx')) {
-        showToast('Erro', 'Apenas arquivos .xlsx são permitidos', 'error');
-        return;
+// Seleção de imagem
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (file) {
+    if (!file.type.startsWith('image/')) {
+      showToast('Erro', 'Apenas arquivos de imagem são permitidos', 'error');
+      return;
     }
 
-    state.selectedFile = file;
-    elements.fileName.textContent = file.name;
-    elements.fileSize.textContent = formatFileSize(file.size);
-    elements.fileInfo.style.display = 'flex';
-    elements.uploadArea.style.display = 'none';
-    elements.uploadBtn.disabled = false;
-}
-
-function removeFile() {
-    state.selectedFile = null;
-    elements.fileInput.value = '';
-    elements.fileInfo.style.display = 'none';
-    elements.uploadArea.style.display = 'block';
-    elements.uploadBtn.disabled = false;
-}
-
-function uploadFile() {
-    window.open(CONFIG.sheetUrl, '_blank');
-    showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
-}
-
-// Funções do Editor
-function updateCharCount() {
-    const content = elements.textEditor.textContent || '';
-    const count = content.length;
-    
-    elements.charCount.textContent = count;
-    elements.charCount.className = 'char-counter';
-    
-    if (count > CONFIG.maxChars * 0.9) {
-        elements.charCount.classList.add('warning');
-    }
-    if (count > CONFIG.maxChars) {
-        elements.charCount.classList.add('error');
-    }
-    
-    elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
-}
-
-function handlePaste(e) {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('text');
-    document.execCommand('insertText', false, text);
-}
-
-function clearEditor() {
-    elements.textEditor.innerHTML = '';
-    updateCharCount();
-    showToast('Sucesso', 'Editor limpo com sucesso', 'success');
-}
-
-function toggleFormat(command) {
-    document.execCommand(command, false, null);
-    elements.textEditor.focus();
-    updateToolbarState();
-}
-
-function updateToolbarState() {
-    elements.boldBtn.classList.toggle('active', document.queryCommandState('bold'));
-    elements.italicBtn.classList.toggle('active', document.queryCommandState('italic'));
-    elements.underlineBtn.classList.toggle('active', document.queryCommandState('underline'));
-}
-
-function handleEmojiClick(e) {
-    if (e.target.classList.contains('emoji')) {
-        const emoji = e.target.dataset.emoji;
-        insertEmoji(emoji);
-        elements.emojiGrid.style.display = 'none';
-    }
-}
-
-function insertEmoji(emoji) {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(emoji));
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    } else {
-        elements.textEditor.focus();
-        document.execCommand('insertText', false, emoji);
-    }
-    updateCharCount();
-}
-
-async function sendWebhook() {
-    if (state.isSending) return;
-
-    const message = elements.textEditor.innerHTML;
-    if (!message.trim()) {
-        showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
-        return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast('Erro', 'A imagem deve ter no máximo 5MB', 'error');
+      return;
     }
 
-    state.isSending = true;
-    elements.sendBtn.classList.add('loading');
-    elements.sendBtn.disabled = true;
+    state.selectedImage = file;
 
-    const payload = {
-        message: message,
-        sheetId: CONFIG.sheetId,
-        sheetUrl: CONFIG.sheetUrl,
-        metadata: {
-            timestamp: new Date().toISOString(),
-            charCount: message.length
-        }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      elements.previewImg.src = ev.target.result;
+      elements.imageName.textContent = file.name;
+      elements.imageSize.textContent = formatFileSize(file.size);
+      elements.imagePreview.style.display = 'block';
     };
+    reader.readAsDataURL(file);
 
-    try {
-        const response = await fetch("https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // lê a resposta com segurança (pode vir JSON ou texto)
-let msg = '';
-try {
-  const data = await response.clone().json();
-  msg = data?.message || '';
-} catch {
-  msg = await response.text(); // se não for JSON, usa texto
+    showToast('Sucesso', 'Imagem selecionada com sucesso', 'success');
+  }
 }
 
-// se chegou aqui, response.ok já foi verificado antes
-showToast('Sucesso', msg || 'Mensagem enviada com sucesso!', 'success');
-    } catch (error) {
-        console.error('Erro ao enviar webhook:', error);
-        showToast('Erro', 'Erro de conexão ao enviar webhook', 'error');
-    } finally {
-        state.isSending = false;
-        elements.sendBtn.classList.remove('loading');
-        elements.sendBtn.disabled = false;
-    }
+function removeImage() {
+  state.selectedImage = null;
+  elements.imageInput.value = '';
+  elements.imagePreview.style.display = 'none';
+  showToast('Sucesso', 'Imagem removida', 'success');
 }
 
-// Funções de UI
+// Atualizar contador
+function updateCharCount() {
+  const content = elements.textEditor.textContent || '';
+  const count = content.length;
+
+  elements.charCount.textContent = count;
+  elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
+}
+
+// Envio via Z-API
+async function sendWebhook() {
+  if (state.isSending) return;
+
+  const message = elements.textEditor.textContent.trim();
+  if (!message) {
+    showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
+    return;
+  }
+
+  state.isSending = true;
+  elements.sendBtn.classList.add('loading');
+  elements.sendBtn.disabled = true;
+
+  let imageData = null;
+  if (state.selectedImage) {
+    imageData = await fileToBase64(state.selectedImage); // já vem com prefixo data:image/png;base64
+  }
+
+  const payload = {
+    phone: "553799999999",  // ⚠️ Aqui pode ser dinâmico (ex: puxar da planilha)
+    caption: message,
+    image: imageData || "https://i.postimg.cc/GhXf2kdJ/logo.png" // fallback
+  };
+
+  try {
+    const url = `https://api.z-api.io/instances/${CONFIG.zapiInstance}/token/${CONFIG.zapiToken}/send-image`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+
+    const data = await response.json();
+    console.log("Resposta Z-API:", data);
+    showToast('Sucesso', 'Mensagem enviada com imagem!', 'success');
+  } catch (error) {
+    console.error("Erro ao enviar:", error);
+    showToast('Erro', 'Erro de conexão ao enviar webhook', 'error');
+  } finally {
+    state.isSending = false;
+    elements.sendBtn.classList.remove('loading');
+    elements.sendBtn.disabled = false;
+  }
+}
+
+// Helpers
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function showToast(title, message, type = 'success') {
   const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
   const toast = document.createElement('div');
@@ -260,25 +172,13 @@ function showToast(title, message, type = 'success') {
   `;
 
   elements.toastContainer.appendChild(toast);
-
-  // auto-fecha (sucesso mais rápido; erro/aviso um pouco mais)
-  const ttl = type === 'success' ? 3000 : 5000;
-  setTimeout(() => toast.remove(), ttl);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
-
-// Event listeners para toolbar
-elements.textEditor.addEventListener('keyup', updateToolbarState);
-elements.textEditor.addEventListener('mouseup', updateToolbarState);
-elements.textEditor.addEventListener('focus', updateToolbarState);
-
-elements.textEditor.addEventListener('focus', () => {
-    setTimeout(updateToolbarState, 10);
-});
