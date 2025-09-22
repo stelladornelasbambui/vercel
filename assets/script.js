@@ -4,10 +4,7 @@ const CONFIG = {
 
   // 🔑 Z-API
   zapiBase: "https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CEC0C1",
-  zapiToken: "98D3BDE53E512EA3B08B8D07",
-
-  // 🔑 Imgbb
-  imgbbKey: "babc90a7ab9bddc78a89ebe1108ff464"
+  zapiToken: "98D3BDE53E512EA3B08B8D07"
 };
 
 // ================== ELEMENTOS ==================
@@ -16,33 +13,19 @@ const elements = {
   charCount: document.getElementById("charCount"),
   clearBtn: document.getElementById("clearBtn"),
   sendBtn: document.getElementById("sendBtn"),
-  toastContainer: document.getElementById("toastContainer"),
-
-  imageInput: document.getElementById("imageInput"),
-  imageUploadBtn: document.getElementById("imageUploadBtn"),
-  imagePreview: document.getElementById("imagePreview"),
-  previewImg: document.getElementById("previewImg"),
-  removeImageBtn: document.getElementById("removeImageBtn"),
-  publicUrl: document.getElementById("publicUrl")
+  toastContainer: document.getElementById("toastContainer")
 };
 
 // ================== ESTADO ==================
 let state = {
-  selectedImage: null,
-  publicImageUrl: null,
   isSending: false
 };
 
-// ================== EVENTOS =====================
+// ================== EVENTOS ==================
 document.addEventListener("DOMContentLoaded", () => {
   elements.textEditor.addEventListener("input", updateCharCount);
   elements.clearBtn.addEventListener("click", clearEditor);
   elements.sendBtn.addEventListener("click", sendWebhook);
-
-  elements.imageUploadBtn.addEventListener("click", () => elements.imageInput.click());
-  elements.imageInput.addEventListener("change", handleImageSelect);
-  elements.removeImageBtn.addEventListener("click", removeImage);
-
   updateCharCount();
 });
 
@@ -60,38 +43,7 @@ function clearEditor() {
   showToast("Editor limpo", "success");
 }
 
-function handleImageSelect(e) {
-  const file = e.target.files[0];
-  if (file) {
-    state.selectedImage = file;
-    elements.previewImg.src = URL.createObjectURL(file);
-    elements.imagePreview.style.display = "block";
-    showToast("Imagem selecionada", "success");
-  }
-}
-
-function removeImage() {
-  state.selectedImage = null;
-  state.publicImageUrl = null;
-  elements.imageInput.value = "";
-  elements.imagePreview.style.display = "none";
-  elements.publicUrl.textContent = "";
-}
-
-// Upload para Imgbb
-async function uploadToImgbb(file) {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const url = `https://api.imgbb.com/1/upload?key=${CONFIG.imgbbKey}`;
-  const res = await fetch(url, { method: "POST", body: formData });
-  const data = await res.json();
-
-  if (!data.success) throw new Error("Erro ao hospedar imagem");
-  return data.data.url; // URL pública
-}
-
-// Enviar via Z-API
+// Enviar só texto pela Z-API
 async function sendWebhook() {
   if (state.isSending) return;
 
@@ -106,30 +58,13 @@ async function sendWebhook() {
   elements.sendBtn.disabled = true;
 
   try {
-    let imageUrl = null;
-    if (state.selectedImage) {
-      imageUrl = await uploadToImgbb(state.selectedImage);
-      state.publicImageUrl = imageUrl;
-      elements.publicUrl.textContent = imageUrl;
-    }
-
-    let endpoint = "send-text";
-    let payload = {
+    const payload = {
       phone: "553799999999", // altere para o número real
       message: message
     };
 
-    if (imageUrl) {
-      endpoint = "send-image"; // ✅ corrigido
-      payload = {
-        phone: "553799999999",
-        image: imageUrl,   // URL pública do Imgbb
-        caption: message   // legenda
-      };
-    }
-
-    const url = `${CONFIG.zapiBase}/token/${CONFIG.zapiToken}/${endpoint}`;
-    console.log("📤 Enviando para:", url, "Payload:", payload);
+    const url = `${CONFIG.zapiBase}/token/${CONFIG.zapiToken}/send-text`;
+    console.log("📤 URL:", url, "Payload:", payload);
 
     const response = await fetch(url, {
       method: "POST",
@@ -140,7 +75,7 @@ async function sendWebhook() {
     if (!response.ok) throw new Error("Erro HTTP: " + response.status);
 
     const result = await response.json();
-    showToast("Mensagem enviada com sucesso!", "success");
+    showToast("Mensagem de texto enviada com sucesso!", "success");
     console.log("✅ Resultado Z-API:", result);
 
   } catch (err) {
