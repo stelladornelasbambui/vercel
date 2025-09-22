@@ -33,7 +33,7 @@ let state = {
   isSending: false
 };
 
-// ================== EVENTOS ==================
+// ================== EVENTOS =====================
 document.addEventListener("DOMContentLoaded", () => {
   elements.textEditor.addEventListener("input", updateCharCount);
   elements.clearBtn.addEventListener("click", clearEditor);
