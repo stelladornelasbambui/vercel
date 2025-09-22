@@ -177,7 +177,7 @@ async function sendWebhook() {
 
     // 🔹 Monta payload no formato da Z-API
     let payload = {
-        phone: "5533999999999" // depois você vai dinamizar pelos contatos da planilha
+        phone: "5533999999999" // depois você vai dinasmizar pelos contatos da planilha
     };
 
     if (state.imageUrl) {
