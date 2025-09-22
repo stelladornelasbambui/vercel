@@ -83,7 +83,7 @@ async function sendWebhook() {
 
   const message = elements.textEditor.textContent.trim();
   if (!message) {
-    showToast("Aviso", "Digite uma mensagem antes de enviar", "warning");
+    showToast("Aviso aos", "Digite uma mensagem antes de enviar", "warning");
     return;
   }
 
