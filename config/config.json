@@ -14,12 +14,7 @@
     "timeout": 30000
   },
   "editor": {
-    "maxChars": 2000,
-    "allowedFormats": ["bold", "italic", "underline"],
-    "emojis": [
-      "😀", "😍", "🎯", "✅", "❌", "🚀", 
-      "📅", "💡", "⭐", "🔥", "💪", "🎉"
-    ]
+    "maxChars": 2000
   },
   "upload": {
     "allowedTypes": [".xlsx", ".xls"],
