@@ -188,7 +188,8 @@ async function sendWebhook() {
     }
 
     try {
-        const response = await fetch("https://api.z-api.io/instances/SUA_INSTANCE/token/SEU_TOKEN/send-messages", {
+const response = await fetch("https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07/send-messages", {
+
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
