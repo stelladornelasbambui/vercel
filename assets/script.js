@@ -12,7 +12,7 @@ async function loadConfig() {
         CONFIG.maxChars = configData.editor.maxChars;
         CONFIG.sheetId = configData.googleSheets.sheetId;
         CONFIG.sheetUrl = configData.googleSheets.sheetUrl;
-        console.log('Configurações carregadasSSSSS:', CONFIG);
+        console.log('Configurações carregadas:', CONFIG);
     } catch (error) {
         console.warn('Erro ao carregar configurações, usando padrões:', error);
     }
@@ -146,7 +146,7 @@ function updateCharCount() {
     elements.charCount.className = 'char-counter';
     if (count > CONFIG.maxChars * 0.9) elements.charCount.classList.add('warning');
     if (count > CONFIG.maxChars) elements.charCount.classList.add('error');
-    elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
+    elements.sendBtn.disabled = count === 0 && !state.imageUrl || count > CONFIG.maxChars;
 }
 
 function handlePaste(e) {
@@ -161,7 +161,7 @@ function clearEditor() {
     showToast('Sucesso', 'Editor limpo com sucesso', 'success');
 }
 
-// ================== WEBHOOK (Z-API) ==================
+// ================== ENVIO VIA WEBHOOK ==================
 async function sendWebhook() {
     if (state.isSending) return;
 
@@ -175,52 +175,29 @@ async function sendWebhook() {
     elements.sendBtn.classList.add('loading');
     elements.sendBtn.disabled = true;
 
-    // 🔹 Configs da Z-API
-    const instanceUrl = "https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07";
-    const clientToken = "Fba907eb583fd4fcda5c9b30c52a6edadS";
-
-    // 🔹 Monta payload
-    let payload;
-    let url;
-
-    if (state.imageUrl) {
-        // Envio de imagem
-        url = `${instanceUrl}/send-image`;
-        payload = {
-            phone: "5533999999999", // substituir pelo número destino
-            image: state.imageUrl,
-            caption: message || ""
-        };
-    } else {
-        // Envio de texto
-        url = `${instanceUrl}/send-text`;
-        payload = {
-            phone: "5533999999999",
-            message: message
-        };
-    }
+    // Payload que será enviado ao fluxo (Webhook Fiqon)
+    const payload = {
+        phone: "5533999999999",       // depois você vai dinamizar pelos contatos da planilha
+        message: message || null,     // texto
+        image: state.imageUrl || null // imagem se existir
+    };
 
     try {
-        const response = await fetch(url, {
+        const response = await fetch("https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12", {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'client-token': clientToken
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
-        console.log("Resposta da Z-API:", result);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        if (response.ok && result.messageId) {
-            showToast('Sucesso', 'Mensagem enviada com sucesso via Z-API!', 'success');
-        } else {
-            showToast('Erro', result.error || JSON.stringify(result), 'error');
-        }
+        const result = await response.json();
+        console.log("Resposta do Webhook:", result);
+
+        showToast('Sucesso', 'Fluxo iniciado pelo webhook!', 'success');
     } catch (error) {
         console.error('Erro ao enviar webhook:', error);
-        showToast('Erro', 'Erro de conexão ao enviar via Z-API', 'error');
+        showToast('Erro', 'Erro ao acionar o webhook', 'error');
     } finally {
         state.isSending = false;
         elements.sendBtn.classList.remove('loading');
