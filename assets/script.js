@@ -122,7 +122,7 @@ async function sendWebhook() {
     if (imageUrl) {
       payload.image = imageUrl;
       payload.caption = message;
-      endpoint = "/send-image";
+      endpoint = "/send-image-url";
     }
 
     const response = await fetch(`${CONFIG.zapiBase}/token/${CONFIG.zapiToken}${endpoint}`, {
