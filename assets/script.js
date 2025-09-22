@@ -1,27 +1,24 @@
-// Configurações globais 2025 - carregadas do config.json
+// ================== CONFIG ==================
 let CONFIG = {
     maxChars: 2000,
     sheetId: '1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s',
     sheetUrl: 'https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899'
 };
 
-// Carregar configurações do arquivo config.json
 async function loadConfig() {
     try {
         const response = await fetch('config/config.json');
         const configData = await response.json();
-
         CONFIG.maxChars = configData.editor.maxChars;
         CONFIG.sheetId = configData.googleSheets.sheetId;
         CONFIG.sheetUrl = configData.googleSheets.sheetUrl;
-
         console.log('Configurações carregadas:', CONFIG);
     } catch (error) {
         console.warn('Erro ao carregar configurações, usando padrões:', error);
     }
 }
 
-// Elementos DOM
+// ================== ELEMENTOS ==================
 const elements = {
     uploadArea: document.getElementById('uploadArea'),
     fileInput: document.getElementById('fileInput'),
@@ -35,29 +32,27 @@ const elements = {
     clearBtn: document.getElementById('clearBtn'),
     sendBtn: document.getElementById('sendBtn'),
     toastContainer: document.getElementById('toastContainer'),
-    // novos elementos imagem
     imageInput: document.getElementById('imageInput'),
     imagePreview: document.getElementById('imagePreview'),
     previewImg: document.getElementById('previewImg')
 };
 
-// Estado
+// ================== ESTADO ==================
 let state = {
     selectedFile: null,
     isSending: false,
     imageUrl: null
 };
 
-// Inicialização
+// ================== INIT ==================
 document.addEventListener('DOMContentLoaded', async () => {
     await loadConfig();
     initializeEventListeners();
     updateCharCount();
 });
 
-// Event Listeners
 function initializeEventListeners() {
-    // Upload de planilha
+    // Planilha
     elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.removeFile.addEventListener('click', removeFile);
@@ -69,18 +64,14 @@ function initializeEventListeners() {
     elements.clearBtn.addEventListener('click', clearEditor);
     elements.sendBtn.addEventListener('click', sendWebhook);
 
-    // Upload imagem
-    if (elements.imageInput) {
-        elements.imageInput.addEventListener('change', handleImageUpload);
-    }
+    // Imagem
+    elements.imageInput.addEventListener('change', handleImageUpload);
 }
 
-// Funções Upload (planilha)
+// ================== UPLOAD PLANILHA ==================
 function handleFileSelect(e) {
     const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
+    if (file) handleFile(file);
 }
 
 function handleFile(file) {
@@ -88,7 +79,6 @@ function handleFile(file) {
         showToast('Erro', 'Apenas arquivos .xlsx são permitidos', 'error');
         return;
     }
-
     state.selectedFile = file;
     elements.fileName.textContent = file.name;
     elements.fileSize.textContent = formatFileSize(file.size);
@@ -110,12 +100,12 @@ function uploadFile() {
     showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
 }
 
-// Funções Upload (imagem Postimages)
+// ================== UPLOAD IMAGEM (ImgBB) ==================
 async function handleImageUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Pré-visualização local
+    // Preview local
     const reader = new FileReader();
     reader.onload = () => {
         elements.previewImg.src = reader.result;
@@ -123,45 +113,39 @@ async function handleImageUpload(e) {
     };
     reader.readAsDataURL(file);
 
-    // Envio para Postimages
+    // Envio para ImgBB
     const formData = new FormData();
-    formData.append("smfile", file);
+    formData.append("image", file);
 
     try {
-        const response = await fetch("https://api.postimages.org/1/upload", {
+        const imgbbKey = "d596c56f618c3db7601359e81c868ec5"; // sua API key
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
             method: "POST",
             body: formData
         });
 
         const result = await response.json();
 
-        if (result.url) {
-            state.imageUrl = result.url;
-            showToast('Sucesso', 'Imagem enviada para Postimages!', 'success');
+        if (result.success) {
+            state.imageUrl = result.data.url; // URL pública
+            showToast('Sucesso', 'Imagem enviada para ImgBB!', 'success');
         } else {
-            throw new Error("Falha no upload");
+            throw new Error(result.error?.message || "Falha no upload");
         }
     } catch (err) {
         console.error(err);
-        showToast('Erro', 'Erro ao enviar imagem para Postimages', 'error');
+        showToast('Erro', 'Erro ao enviar imagem para ImgBB', 'error');
     }
 }
 
-// Funções Editor
+// ================== EDITOR ==================
 function updateCharCount() {
     const content = elements.textEditor.textContent || '';
     const count = content.length;
-
     elements.charCount.textContent = count;
     elements.charCount.className = 'char-counter';
-
-    if (count > CONFIG.maxChars * 0.9) {
-        elements.charCount.classList.add('warning');
-    }
-    if (count > CONFIG.maxChars) {
-        elements.charCount.classList.add('error');
-    }
-
+    if (count > CONFIG.maxChars * 0.9) elements.charCount.classList.add('warning');
+    if (count > CONFIG.maxChars) elements.charCount.classList.add('error');
     elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
 }
 
@@ -177,10 +161,9 @@ function clearEditor() {
     showToast('Sucesso', 'Editor limpo com sucesso', 'success');
 }
 
-// Enviar Webhook
+// ================== WEBHOOK ==================
 async function sendWebhook() {
     if (state.isSending) return;
-
     const message = elements.textEditor.textContent.trim();
     if (!message) {
         showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
@@ -200,11 +183,7 @@ async function sendWebhook() {
             charCount: message.length
         }
     };
-
-    // Se tiver imagem, adiciona ao payload
-    if (state.imageUrl) {
-        payload.image = state.imageUrl;
-    }
+    if (state.imageUrl) payload.image = state.imageUrl;
 
     try {
         const response = await fetch("https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12", {
@@ -212,11 +191,8 @@ async function sendWebhook() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
         const result = await response.json();
-
         if (result.success) {
             showToast('Sucesso', 'Mensagem enviada com sucesso!', 'success');
         } else {
@@ -232,13 +208,11 @@ async function sendWebhook() {
     }
 }
 
-// UI Helpers
+// ================== HELPERS ==================
 function showToast(title, message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
     const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
-    
     toast.innerHTML = `
         <div class="toast-icon">${icon}</div>
         <div class="toast-content">
@@ -247,9 +221,7 @@ function showToast(title, message, type = 'success') {
         </div>
         <button class="toast-close" onclick="this.parentElement.remove()">×</button>
     `;
-    
     elements.toastContainer.appendChild(toast);
-    
     setTimeout(() => toast.remove(), 5000);
 }
 
