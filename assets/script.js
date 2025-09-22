@@ -12,7 +12,7 @@ async function loadConfig() {
         CONFIG.maxChars = configData.editor.maxChars;
         CONFIG.sheetId = configData.googleSheets.sheetId;
         CONFIG.sheetUrl = configData.googleSheets.sheetUrl;
-        console.log('Configurações carregadas:', CONFIG);
+        console.log('Configurações carregadasSSSSS:', CONFIG);
     } catch (error) {
         console.warn('Erro ao carregar configurações, usando padrões:', error);
     }
