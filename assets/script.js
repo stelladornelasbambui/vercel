@@ -161,12 +161,13 @@ function clearEditor() {
     showToast('Sucesso', 'Editor limpo com sucesso', 'success');
 }
 
-// ================== WEBHOOK ==================
+// ================== WEBHOOK (Z-API) ==================
 async function sendWebhook() {
     if (state.isSending) return;
+
     const message = elements.textEditor.textContent.trim();
-    if (!message) {
-        showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
+    if (!message && !state.imageUrl) {
+        showToast('Aviso', 'Digite uma mensagem ou envie uma imagem antes de enviar', 'warning');
         return;
     }
 
@@ -174,33 +175,37 @@ async function sendWebhook() {
     elements.sendBtn.classList.add('loading');
     elements.sendBtn.disabled = true;
 
-    const payload = {
-        message: message,
-        sheetId: CONFIG.sheetId,
-        sheetUrl: CONFIG.sheetUrl,
-        metadata: {
-            timestamp: new Date().toISOString(),
-            charCount: message.length
-        }
+    // 🔹 Monta payload no formato da Z-API
+    let payload = {
+        phone: "5533999999999" // depois você vai dinamizar pelos contatos da planilha
     };
-    if (state.imageUrl) payload.image = state.imageUrl;
+
+    if (state.imageUrl) {
+        payload.image = state.imageUrl; // URL pública do ImgBB
+        payload.caption = message || ""; // legenda opcional
+    } else {
+        payload.message = message; // texto puro
+    }
 
     try {
-        const response = await fetch("https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12", {
+        const response = await fetch("https://api.z-api.io/instances/SUA_INSTANCE/token/SEU_TOKEN/send-messages", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const result = await response.json();
-        if (result.success) {
-            showToast('Sucesso', 'Mensagem enviada com sucesso!', 'success');
+
+        if (result.sent) {
+            showToast('Sucesso', 'Mensagem enviada com sucesso via Z-API!', 'success');
         } else {
-            showToast('Erro', result.message || 'Erro ao enviar webhook', 'error');
+            showToast('Erro', result.error || 'Erro ao enviar via Z-API', 'error');
         }
     } catch (error) {
         console.error('Erro ao enviar webhook:', error);
-        showToast('Erro', 'Erro de conexão ao enviar webhook', 'error');
+        showToast('Erro', 'Erro de conexão ao enviar via Z-API', 'error');
     } finally {
         state.isSending = false;
         elements.sendBtn.classList.remove('loading');
