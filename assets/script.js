@@ -128,7 +128,7 @@ async function handleImageUpload(e) {
 
         if (result.success) {
             state.imageUrl = result.data.url; // URL pública
-            showToast('Sucesso', 'Imagem enviada para ImgBB!', 'success');
+            showToast('Sucesso', 'Imagem enviada para ImgBB!', 'ssssuccess');
         } else {
             throw new Error(result.error?.message || "Falha no upload");
         }
