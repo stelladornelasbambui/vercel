@@ -49,7 +49,7 @@ function clearEditor() {
 async function sendWebhook() {
     if (state.isSending) return;
 
-    const message = elements.textEditor.textContent.trim();
+    const message = elements.textEditor.innerContent.trim();
     if (!message) {
         showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
         return;
