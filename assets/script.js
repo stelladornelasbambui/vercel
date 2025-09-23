@@ -1,8 +1,55 @@
+// ================== CONFIG ===================
+let CONFIG = {
+    maxChars: 2000,
+    sheetId: '1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s',
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899'
+};
+
+// ================== ELEMENTOS ==================
+const elements = {
+    textEditor: document.getElementById('textEditor'),
+    charCount: document.getElementById('charCount'),
+    clearBtn: document.getElementById('clearBtn'),
+    sendBtn: document.getElementById('sendBtn'),
+    toastContainer: document.getElementById('toastContainer')
+};
+
+// ================== ESTADO ==================
+let state = {
+    isSending: false
+};
+
+// ================== INIT ==================
+document.addEventListener('DOMContentLoaded', () => {
+    initializeEventListeners();
+    updateCharCount();
+});
+
+function initializeEventListeners() {
+    elements.textEditor.addEventListener('input', updateCharCount);
+    elements.clearBtn.addEventListener('click', clearEditor);
+    elements.sendBtn.addEventListener('click', sendWebhook);
+}
+
+// ================== EDITOR ==================
+function updateCharCount() {
+    const content = elements.textEditor.textContent || '';
+    const count = content.length;
+    elements.charCount.textContent = count;
+    elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
+}
+
+function clearEditor() {
+    elements.textEditor.innerHTML = '';
+    updateCharCount();
+    showToast('Sucesso', 'Editor limpo com sucesso', 'success');
+}
+
 // ================== ENVIO VIA WEBHOOK ==================
 async function sendWebhook() {
     if (state.isSending) return;
 
-    const message = elements.textEditor.innerText.trim(); // ✅ corrigido
+    const message = elements.textEditor.textContent.trim();
     if (!message) {
         showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
         return;
@@ -38,4 +85,21 @@ async function sendWebhook() {
         state.isSending = false;
         elements.sendBtn.disabled = false;
     }
+}
+
+// ================== HELPERS ==================
+function showToast(title, message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    elements.toastContainer.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
 }
