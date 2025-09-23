@@ -33,7 +33,7 @@ function initializeEventListeners() {
 
 // ================== EDITOR ==================
 function updateCharCount() {
-    const content = elements.textEditor.textContent || '';
+    const content = elements.textEditor.innerText || ''; // ✅ preserva quebras
     const count = content.length;
     elements.charCount.textContent = count;
     elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
@@ -49,7 +49,7 @@ function clearEditor() {
 async function sendWebhook() {
     if (state.isSending) return;
 
-    const message = elements.textEditor.textContent.trim();
+    const message = elements.textEditor.innerText.trim(); // ✅ preserva quebras de linha
     if (!message) {
         showToast('Aviso', 'Digite uma mensagem antes de enviar', 'warning');
         return;
