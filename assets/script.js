@@ -1,3 +1,4 @@
+<script>
 // ================== CONFIG ===================
 let CONFIG = {
     maxChars: 2000,
@@ -5,8 +6,28 @@ let CONFIG = {
     sheetUrl: 'https://docs.google.com/spreadsheets/d/1nT_ccRwFtEWiYvh5s4iyIDTgOj5heLnXSixropbGL8s/edit?gid=1933645899#gid=1933645899'
 };
 
+async function loadConfig() {
+    try {
+        const response = await fetch('config/config.json');
+        const configData = await response.json();
+        CONFIG.maxChars = configData.editor.maxChars;
+        CONFIG.sheetId = configData.googleSheets.sheetId;
+        CONFIG.sheetUrl = configData.googleSheets.sheetUrl;
+        console.log('Configurações carregadas:', CONFIG);
+    } catch (error) {
+        console.warn('Erro ao carregar configurações, usando padrões:', error);
+    }
+}
+
 // ================== ELEMENTOS ==================
 const elements = {
+    uploadArea: document.getElementById('uploadArea'),
+    fileInput: document.getElementById('fileInput'),
+    fileInfo: document.getElementById('fileInfo'),
+    fileName: document.getElementById('fileName'),
+    fileSize: document.getElementById('fileSize'),
+    removeFile: document.getElementById('removeFile'),
+    uploadBtn: document.getElementById('uploadBtn'),
     textEditor: document.getElementById('textEditor'),
     charCount: document.getElementById('charCount'),
     clearBtn: document.getElementById('clearBtn'),
@@ -16,30 +37,61 @@ const elements = {
 
 // ================== ESTADO ==================
 let state = {
+    selectedFile: null,
     isSending: false
 };
 
 // ================== INIT ==================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadConfig();
     initializeEventListeners();
     updateCharCount();
 });
 
-// ================== EVENTOS ==================
 function initializeEventListeners() {
+    // Planilha
+    elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+    elements.fileInput.addEventListener('change', handleFileSelect);
+    elements.removeFile.addEventListener('click', removeFile);
+    elements.uploadBtn.addEventListener('click', uploadFile);
+
     // Editor
     elements.textEditor.addEventListener('input', updateCharCount);
+    elements.textEditor.addEventListener('paste', handlePaste);
     elements.clearBtn.addEventListener('click', clearEditor);
     elements.sendBtn.addEventListener('click', sendWebhook);
+}
 
-    // 👉 Botão para abrir a planilha
-    const uploadBtn = document.getElementById('uploadBtn');
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', () => {
-            window.open(CONFIG.sheetUrl, '_blank'); // abre em nova aba
-            showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
-        });
+// ================== UPLOAD PLANILHA ==================
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+}
+
+function handleFile(file) {
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+        showToast('Erro', 'Apenas arquivos .xlsx são permitidos', 'error');
+        return;
     }
+    state.selectedFile = file;
+    elements.fileName.textContent = file.name;
+    elements.fileSize.textContent = formatFileSize(file.size);
+    elements.fileInfo.style.display = 'flex';
+    elements.uploadArea.style.display = 'none';
+    elements.uploadBtn.disabled = false;
+}
+
+function removeFile() {
+    state.selectedFile = null;
+    elements.fileInput.value = '';
+    elements.fileInfo.style.display = 'none';
+    elements.uploadArea.style.display = 'block';
+    elements.uploadBtn.disabled = false;
+}
+
+function uploadFile() {
+    window.open(CONFIG.sheetUrl, '_blank');
+    showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
 }
 
 // ================== EDITOR ==================
@@ -47,7 +99,16 @@ function updateCharCount() {
     const content = elements.textEditor.textContent || '';
     const count = content.length;
     elements.charCount.textContent = count;
+    elements.charCount.className = 'char-counter';
+    if (count > CONFIG.maxChars * 0.9) elements.charCount.classList.add('warning');
+    if (count > CONFIG.maxChars) elements.charCount.classList.add('error');
     elements.sendBtn.disabled = count === 0 || count > CONFIG.maxChars;
+}
+
+function handlePaste(e) {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    document.execCommand('insertText', false, text);
 }
 
 function clearEditor() {
@@ -67,8 +128,10 @@ async function sendWebhook() {
     }
 
     state.isSending = true;
+    elements.sendBtn.classList.add('loading');
     elements.sendBtn.disabled = true;
 
+    // 👉 Seu endpoint de webhook
     const apiUrl = "https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12";
 
     try {
@@ -84,9 +147,7 @@ async function sendWebhook() {
         const text = await response.text();
         console.log("Resposta do Webhook:", text);
 
-        if (!response.ok) {
-            throw new Error(`Erro HTTP ${response.status} - ${text}`);
-        }
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
 
         showToast('Sucesso', 'Webhook acionado com sucesso!', 'success');
     } catch (error) {
@@ -94,6 +155,7 @@ async function sendWebhook() {
         showToast('Erro', 'Falha ao acionar webhook', 'error');
     } finally {
         state.isSending = false;
+        elements.sendBtn.classList.remove('loading');
         elements.sendBtn.disabled = false;
     }
 }
@@ -112,5 +174,14 @@ function showToast(title, message, type = 'success') {
         <button class="toast-close" onclick="this.parentElement.remove()">×</button>
     `;
     elements.toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
+    setTimeout(() => toast.remove(), 5000);
 }
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
