@@ -30,7 +30,7 @@ async function sendWebhook() {
             throw new Error(`Erro HTTP ${response.status} - ${text}`);
         }
 
-        showToast('Sucesso', 'Mensagem enviada com sucesso!', 'success');
+        showToast('Sucesso', 'Webhook acionado com sucesso!', 'success');
     } catch (error) {
         console.error('Erro ao acionar webhook:', error);
         showToast('Erro', 'Falha ao acionar webhook', 'error');
