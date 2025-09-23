@@ -1,3 +1,4 @@
+<script>
 // ================== CONFIG ===================
 let CONFIG = {
     maxChars: 2000,
@@ -18,8 +19,7 @@ async function loadConfig() {
     }
 }
 
-// ================== ELEMENTOS ======f============
-// ================== ELEMENTOS ===ggg===f============
+// ================== ELEMENTOS ==================
 const elements = {
     uploadArea: document.getElementById('uploadArea'),
     fileInput: document.getElementById('fileInput'),
@@ -117,7 +117,7 @@ function clearEditor() {
     showToast('Sucesso', 'Editor limpo com sucesso', 'success');
 }
 
-// ================== ENVIO VIA Z-API (texto apenas) ==================
+// ================== ENVIO VIA WEBHOOK ==================
 async function sendWebhook() {
     if (state.isSending) return;
 
@@ -131,28 +131,28 @@ async function sendWebhook() {
     elements.sendBtn.classList.add('loading');
     elements.sendBtn.disabled = true;
 
-    // URL da sua instância Z-API
-    const apiUrl = "https://api.z-api.io/instances/3DF2EE19A630504B2B138E66062CE0C1/token/9BD3BD5E35E12EA3B0B88D07/send-text";
+    // 👉 Seu endpoint de webhook
+    const apiUrl = "https://webhook.fiqon.app/webhook/9fd68837-4f32-4ee3-a756-418a87beadc9/79c39a2c-225f-4143-9ca4-0d70fa92ee12";
 
     try {
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                phone: "5531999999999",  // 👈 coloque o número destino aqui no formato 55 + DDD + número
-                message: message
+                message: message,
+                timestamp: Date.now()
             })
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        console.log("Resposta do Webhook:", text);
 
-        const result = await response.json();
-        console.log("Resposta da Z-API:", result);
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
 
-        showToast('Sucesso', 'Mensagem enviada com sucesso!', 'success');
+        showToast('Sucesso', 'Webhook acionado com sucesso!', 'success');
     } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        showToast('Erro', 'Erro ao enviar mensagem via Z-API', 'error');
+        console.error('Erro ao acionar webhook:', error);
+        showToast('Erro', 'Falha ao acionar webhook', 'error');
     } finally {
         state.isSending = false;
         elements.sendBtn.classList.remove('loading');
@@ -184,3 +184,4 @@ function formatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+</script>
