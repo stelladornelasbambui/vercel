@@ -3,121 +3,165 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📤 Envio em Massa - Sistema de Mensagens</title>
-  <link rel="stylesheet" href="assets/styles.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <title>Editor de Mensagem</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
-    .toolbar {
-      margin-bottom: 8px;
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #fff;
       display: flex;
-      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      width: 400px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .toolbar {
+      margin-bottom: 10px;
     }
     .toolbar button {
+      margin: 2px;
       padding: 6px 10px;
-      cursor: pointer;
-      border: 1px solid #ccc;
+      border: none;
       border-radius: 6px;
-      background: #f5f5f5;
+      cursor: pointer;
+      background: #334155;
+      color: #fff;
+      font-weight: bold;
     }
-    .emoji-panel {
+    textarea {
+      width: 100%;
+      height: 180px;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+      resize: none;
+      background: #334155;
+      color: #fff;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .footer button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .limpar {
+      background: #475569;
+      color: #fff;
+    }
+    .enviar {
+      background: #10b981;
+      color: #fff;
+    }
+    .emoji-picker {
       display: none;
-      margin-top: 8px;
-      border: 1px solid #ddd;
+      background: #334155;
       padding: 8px;
-      border-radius: 6px;
-      background: #fff;
-      max-width: 220px;
+      border-radius: 8px;
+      margin-top: 5px;
     }
-    .emoji-panel span {
-      font-size: 20px;
+    .emoji-picker span {
       cursor: pointer;
+      font-size: 20px;
       margin: 4px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <header class="header">
-      <h1>🚀 <strong>Envio em Massa</strong></h1>
-      <p>Sistema inteligente para disparo de mensagens 📩</p>
-    </header>
+    <h2>📝 Editor de Mensagem</h2>
+    <p>✍️ Escreva sua mensagem abaixo (até <b>2000</b> caracteres)</p>
 
-    <main class="main-content">
-      <!-- Seção de Editor -->
-      <section class="editor-section">
-        <div class="card">
-          <h2>✏️ <u>Editor de Mensagem</u></h2>
-          <p>🖊️ Escreva sua mensagem abaixo. Use até <strong>2000 caracteres</strong></p>
+    <!-- Botões de formatação -->
+    <div class="toolbar">
+      <button onclick="formatar('**')">(n)</button>
+      <button onclick="formatar('__')">(s)</button>
+      <button onclick="formatar('*')">(i)</button>
+      <button onclick="toggleEmoji()">😊</button>
+    </div>
 
-          <!-- Barra de ferramentas -->
-          <div class="toolbar">
-            <button type="button" onclick="document.execCommand('bold')"><b>Negrito</b></button>
-            <button type="button" onclick="document.execCommand('underline')"><u>Sublinhar</u></button>
-            <button type="button" id="emojiBtn">😀 Emoji</button>
-          </div>
+    <!-- Seletor de emojis -->
+    <div class="emoji-picker" id="emojiPicker">
+      <span onclick="inserirEmoji('😀')">😀</span>
+      <span onclick="inserirEmoji('😍')">😍</span>
+      <span onclick="inserirEmoji('🎯')">🎯</span>
+      <span onclick="inserirEmoji('✅')">✅</span>
+      <span onclick="inserirEmoji('🚀')">🚀</span>
+      <span onclick="inserirEmoji('📅')">📅</span>
+    </div>
 
-          <!-- Editor -->
-          <div class="editor-container">
-            <div
-              class="editor"
-              id="textEditor"
-              contenteditable="true"
-              data-placeholder="💬 Digite sua mensagem aqui..."></div>
-            <div class="char-counter">
-              <span id="charCount">0</span>/2000 🔠 caracteres
-            </div>
-          </div>
+    <!-- Área de texto -->
+    <textarea id="mensagem" maxlength="2000" placeholder="💬 Digite sua mensagem aqui..."></textarea>
 
-          <!-- Painel de emojis -->
-          <div class="emoji-panel" id="emojiPanel">
-            <span>😀</span><span>😍</span><span>🎉</span><span>🔥</span><span>🚀</span>
-            <span>✅</span><span>⚠️</span><span>❌</span><span>📅</span><span>💡</span>
-          </div>
-
-          <!-- Ações -->
-          <div class="editor-actions">
-            <button type="button" class="btn btn-secondary" id="clearBtn">🗑️ <strong>Limpar</strong></button>
-            <button type="button" class="btn btn-success" id="sendBtn">
-              <span class="btn-text">📤 <strong>Enviar Webhook</strong></span>
-            </button>
-          </div>
-        </div>
-      </section>
-    </main>
+    <div class="footer">
+      <button class="limpar" onclick="limpar()">🗑 Limpar</button>
+      <button class="enviar" onclick="enviar()">📤 Enviar mensagem</button>
+    </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- Script -->
   <script>
-    const textEditor = document.getElementById("textEditor");
-    const charCount = document.getElementById("charCount");
-    const emojiBtn = document.getElementById("emojiBtn");
-    const emojiPanel = document.getElementById("emojiPanel");
+    function formatar(sintaxe) {
+      let textarea = document.getElementById("mensagem");
+      let inicio = textarea.selectionStart;
+      let fim = textarea.selectionEnd;
+      let texto = textarea.value;
 
-    // contador de caracteres 
-    textEditor.addEventListener("input", () => {
-      charCount.textContent = textEditor.innerText.length;
-    });
-
-    // abrir/fechar painel de emoji
-    emojiBtn.addEventListener("click", () => {
-      emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
-    });
-
-    // inserir emoji
-    emojiPanel.addEventListener("click", (e) => {
-      if (e.target.tagName === "SPAN") {
-        document.execCommand("insertText", false, e.target.textContent);
+      if (inicio !== fim) {
+        let selecionado = texto.substring(inicio, fim);
+        let novoTexto = texto.substring(0, inicio) + sintaxe + selecionado + sintaxe + texto.substring(fim);
+        textarea.value = novoTexto;
       }
-    });
+      textarea.focus();
+    }
 
-    // limpar editor
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      textEditor.innerHTML = "";
-      charCount.textContent = 0;
-    });
+    function toggleEmoji() {
+      let picker = document.getElementById("emojiPicker");
+      picker.style.display = (picker.style.display === "block") ? "none" : "block";
+    }
+
+    function inserirEmoji(emoji) {
+      let textarea = document.getElementById("mensagem");
+      let inicio = textarea.selectionStart;
+      let fim = textarea.selectionEnd;
+      let texto = textarea.value;
+
+      textarea.value = texto.substring(0, inicio) + emoji + texto.substring(fim);
+      textarea.focus();
+    }
+
+    function limpar() {
+      document.getElementById("mensagem").value = "";
+    }
+
+    function enviar() {
+      let mensagem = document.getElementById("mensagem").value;
+      if (mensagem.trim() === "") {
+        alert("Digite uma mensagem antes de enviar!");
+        return;
+      }
+      alert("Mensagem enviada:\n\n" + mensagem);
+      // aqui você pode substituir pelo seu webhook/função de integração
+    }
   </script>
 </body>
 </html>
