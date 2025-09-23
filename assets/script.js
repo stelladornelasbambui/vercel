@@ -86,6 +86,20 @@ async function sendWebhook() {
         elements.sendBtn.disabled = false;
     }
 }
+function initializeEventListeners() {
+    elements.textEditor.addEventListener('input', updateCharCount);
+    elements.clearBtn.addEventListener('click', clearEditor);
+    elements.sendBtn.addEventListener('click', sendWebhook);
+
+    // 👉 Adicionar evento para abrir a planilha
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', () => {
+            window.open(CONFIG.sheetUrl, '_blank'); // abre em nova aba
+            showToast('Sucesso', 'Abrindo planilha do Google Sheets...', 'success');
+        });
+    }
+}
 
 // ================== HELPERS ==================
 function showToast(title, message, type = 'success') {
