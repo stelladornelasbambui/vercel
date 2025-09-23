@@ -6,42 +6,57 @@
   <title>📤 Envio em Massa - Sistema de Mensagens</title>
   <link rel="stylesheet" href="assets/styles.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    .toolbar {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+    }
+    .toolbar button {
+      padding: 6px 10px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f5f5f5;
+    }
+    .emoji-panel {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid #ddd;
+      padding: 8px;
+      border-radius: 6px;
+      background: #fff;
+      max-width: 220px;
+    }
+    .emoji-panel span {
+      font-size: 20px;
+      cursor: pointer;
+      margin: 4px;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <header class="header">
       <h1>🚀 <strong>Envio em Massa</strong></h1>
-      <p><em>Sistema inteligente para disparo de mensagens 📩</em></p>
+      <p>Sistema inteligente para disparo de mensagens 📩</p>
     </header>
 
     <main class="main-content">
-      <!-- Seção de Upload de Planilha -->
-      <section class="upload-section">
-        <div class="card">
-          <h2>📊 <u>Carregar Planilha</u></h2>
-          <p>💡 <em>Selecione uma planilha <strong>.xlsx</strong> com os contatos</em></p>
-          <div class="upload-area" id="uploadArea">
-            <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none"/>
-            <button type="button" class="btn btn-primary" id="uploadBtn">
-              <span class="btn-text">📂 Inserir dados</span>
-            </button>
-          </div>
-          <div class="file-info" id="fileInfo" style="display:none;">
-            <div class="file-details">
-              <div class="file-name" id="fileName"><strong>Nome:</strong></div>
-              <div class="file-size" id="fileSize"><em>Tamanho:</em></div>
-            </div>
-            <button type="button" class="btn btn-secondary" id="removeFile">❌ Remover</button>
-          </div>
-        </div>
-      </section>
-
       <!-- Seção de Editor -->
       <section class="editor-section">
         <div class="card">
           <h2>✏️ <u>Editor de Mensagem</u></h2>
-          <p>🖊️ <em>Escreva sua mensagem abaixo. Use até <strong>2000 caracteres</strong></em></p>
+          <p>🖊️ Escreva sua mensagem abaixo. Use até <strong>2000 caracteres</strong></p>
 
+          <!-- Barra de ferramentas -->
+          <div class="toolbar">
+            <button type="button" onclick="document.execCommand('bold')"><b>Negrito</b></button>
+            <button type="button" onclick="document.execCommand('underline')"><u>Sublinhar</u></button>
+            <button type="button" id="emojiBtn">😀 Emoji</button>
+          </div>
+
+          <!-- Editor -->
           <div class="editor-container">
             <div
               class="editor"
@@ -53,25 +68,18 @@
             </div>
           </div>
 
+          <!-- Painel de emojis -->
+          <div class="emoji-panel" id="emojiPanel">
+            <span>😀</span><span>😍</span><span>🎉</span><span>🔥</span><span>🚀</span>
+            <span>✅</span><span>⚠️</span><span>❌</span><span>📅</span><span>💡</span>
+          </div>
+
           <!-- Ações -->
           <div class="editor-actions">
             <button type="button" class="btn btn-secondary" id="clearBtn">🗑️ <strong>Limpar</strong></button>
             <button type="button" class="btn btn-success" id="sendBtn">
               <span class="btn-text">📤 <strong>Enviar Webhook</strong></span>
             </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Seção de Upload de Imagem -->
-      <section class="upload-image">
-        <div class="card">
-          <h2>🖼️ <u>Upload de Imagem</u></h2>
-          <p>📸 <em>Adicione uma imagem para enviar junto com a mensagem</em></p>
-          <input type="file" id="imageInput" accept="image/*" />
-          <div id="imagePreview" style="margin-top:10px; display:none;">
-            <p><strong>👀 Pré-visualização:</strong></p>
-            <img id="previewImg" src="" alt="Prévia" style="max-width:200px; border:2px dashed #888; border-radius:8px; padding:5px;"/>
           </div>
         </div>
       </section>
@@ -82,6 +90,34 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Script -->
-  <script src="assets/script.js" defer></script>
+  <script>
+    const textEditor = document.getElementById("textEditor");
+    const charCount = document.getElementById("charCount");
+    const emojiBtn = document.getElementById("emojiBtn");
+    const emojiPanel = document.getElementById("emojiPanel");
+
+    // contador de caracteres
+    textEditor.addEventListener("input", () => {
+      charCount.textContent = textEditor.innerText.length;
+    });
+
+    // abrir/fechar painel de emoji
+    emojiBtn.addEventListener("click", () => {
+      emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
+    });
+
+    // inserir emoji
+    emojiPanel.addEventListener("click", (e) => {
+      if (e.target.tagName === "SPAN") {
+        document.execCommand("insertText", false, e.target.textContent);
+      }
+    });
+
+    // limpar editor
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      textEditor.innerHTML = "";
+      charCount.textContent = 0;
+    });
+  </script>
 </body>
 </html>
